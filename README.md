@@ -40,6 +40,4 @@ relay,active,name
 474,0,Relay A
 475,0,Relay B
 ```
-- To set LOW or HIGH relay GPIO pin request: `/relay?<"off" for LOW, "on" for HIGH>=<pin id>`. Response on success:
-
-Example request: `/relay?on=475`. Response: `Successfully set HIGH level on relay!`.
+- To set LOW or HIGH relay GPIO pin request: `/relay?<"off" for LOW, "on" for HIGH>=<pin id>`. Example request: `/relay?on=475`. Response: `Successfully set HIGH level on relay!`.
