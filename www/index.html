@@ -31,6 +31,7 @@
     <script>
       let fetch_relays
       const switch_relay = async (relay, mode) => {
+        relays.innerHTML = ''
         let resp = await fetch(`/relay?${mode}=${relay}`)
         if (resp.ok) {
           resp = await resp.text()
@@ -38,7 +39,6 @@
         } else {
           alert(`HTTP error ${resp.status}`)
         }
-        relays.innerHTML = ''
         fetch_relays()
       }
       (async () => {

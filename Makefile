@@ -15,4 +15,4 @@ clean:
 install: $(TARGET) www/index.html
 	install -d $(PREFIX)/bin
 	install -m 755 relay-control $(PREFIX)/bin/relay-control
-	install -m 644 www/index.html /var/www/html/index.html
+	install -d www /var/www/html
