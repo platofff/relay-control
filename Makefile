@@ -15,4 +15,5 @@ clean:
 install: $(TARGET) www/index.html
 	install -d $(PREFIX)/bin
 	install -m 755 relay-control $(PREFIX)/bin/relay-control
-	install -d www /var/www/html
+	install -m 644 www/index.html /var/www/html/index.html
+	install -m 644 www/favicon.ico /var/www/html/favicon.ico
