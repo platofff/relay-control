@@ -1,0 +1,11 @@
+[Unit]
+Description=Relay control
+Before=lighttpd.service
+
+[Service]
+ExecStart=/usr/local/bin/relay-control
+KillSignal=SIGINT
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
