@@ -5,7 +5,7 @@ Simple program for switching relays via GPIO on Linux with FastCGI HTTP-based AP
 
 #### Installation
 - Install GNU C99-compliant compiler (`gcc` or `clang`) and FastCGI library with development headers (`libfcgi-dev` package in Debian)
-- Edit `src/relay-conrol.h`
+- Edit `include/relay-conrol.h`
 - Run `make install`
 - Install any HTTP server with FastCGI support. I am using `lighttpd`. There is a part of possible content in `/etc/lighttpd/lighttpd.conf`:
 
