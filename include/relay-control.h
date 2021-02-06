@@ -16,9 +16,12 @@ Second value is relay's name in web interface.
 
 WARNING: You must use only PULLED-DOWN GPIO pins on your board!
 */
-#define RELAYS_COUNT 2
+#define RELAYS_COUNT 5
 Relay RELAYS[RELAYS_COUNT] = {
-  { "474", "Relay A" },
-  { "475", "Relay B" }
+  { "477", "Relay A" },
+  { "478", "Relay B" },
+  { "479", "Relay C" },
+  { "480", "Relay D" },
+  { "481", "Relay E" }
 };
 
