@@ -57,11 +57,7 @@ bool gpio_set_active(const char* gpio, bool active) {
   char* direction_file = gpio_get_direction_file(gpio);
   int direction_data = open(direction_file, O_WRONLY);
   free(direction_file);
-  if (active) {
-    direction = "out";
-  } else {
-    direction = "in";
-  }
+  direction = active ? "out" : "in";
   if (direction_data == -1 || write(direction_data, direction, 3) != 3) {
     fprintf(stderr, "Error writing to %s\n", direction_file);
     close(direction_data);
