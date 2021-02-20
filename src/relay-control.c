@@ -110,11 +110,10 @@ char* rm_syms(const char* str, unsigned char count) {
 }
 
 void http_plain(char* status, FCGX_Stream* stream) {
-    FCGX_FPrintF(
-    	stream,
-        "Status: %s\r\n"
-        "Content-type: text/plain\r\n\r\n",
-        status);
+  FCGX_FPrintF(stream,
+               "Status: %s\r\n"
+               "Content-type: text/plain\r\n\r\n",
+               status);
 }
 
 int main() {
@@ -157,22 +156,21 @@ int main() {
           request.out);
       for (unsigned short i = 0; i < RELAYS_COUNT; i++)
         FCGX_FPrintF(request.out, "%s,%d,%s\n", RELAYS[i].id,
-                     gpio_get_active(RELAYS[i].id),
-                     RELAYS[i].name);
+                     gpio_get_active(RELAYS[i].id), RELAYS[i].name);
       continue;
     } else if (!strcmp(request_method, "POST")) {
       // Get POST body data
       size_t post_len = atoi(FCGX_GetParam("CONTENT_LENGTH", request.envp));
       char* post_data = malloc(post_len);
       FCGX_GetStr(post_data, post_len, request.in);
-      
+
       if (starts_with(post_data, "off=")) {
         char* gpio = rm_syms(post_data, 4);
         if (gpio_set_active(gpio, 0)) {
-        	http_plain("200 OK", request.out);
+          http_plain("200 OK", request.out);
           FCGX_PutS("ok", request.out);
         } else {
-        	http_plain("500 Internal Server Error", request.out);
+          http_plain("500 Internal Server Error", request.out);
           FCGX_PutS("error", request.out);
         }
         free(gpio);
@@ -180,10 +178,10 @@ int main() {
       } else if (starts_with(post_data, "on=")) {
         char* gpio = rm_syms(post_data, 3);
         if (gpio_set_active(gpio, 1)) {
-        	http_plain("200 OK", request.out);
+          http_plain("200 OK", request.out);
           FCGX_PutS("ok", request.out);
         } else {
-        	http_plain("500 Internal Server Error", request.out);
+          http_plain("500 Internal Server Error", request.out);
           FCGX_PutS("error", request.out);
         }
         free(gpio);
