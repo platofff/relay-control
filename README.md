@@ -3,6 +3,10 @@ Simple program for switching relays via GPIO on Linux with FastCGI HTTP-based AP
 
 ![](screenshot.png)
 
+#### Tested boards
+- `Raspberry Pi 3 Model B` with Debian 10
+- `Orange Pi Lite` (Allwinner H3) with Armbian 21.02.2 Buster
+
 #### Installation
 - Install GNU C99-compliant compiler (`gcc` or `clang`) and FastCGI library with development headers (`libfcgi-dev` package in Debian)
 - Edit `include/relay-conrol.h`
@@ -40,4 +44,4 @@ relay,active,name
 474,0,Relay A
 475,0,Relay B
 ```
-- To set LOW or HIGH relay GPIO pin request: `/relay?<"off" for LOW, "on" for HIGH>=<pin id>`. Example request: `/relay?on=475`. Response: `Successfully set HIGH level on relay!`.
+- To set LOW or HIGH relay GPIO pin make POST request to `/relay` with body `<"off" for LOW, "on" for HIGH>=<pin id>`. Example request: `on=475`. Response: `ok` with code 200 or `error` with code 500.

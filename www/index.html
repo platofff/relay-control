@@ -35,13 +35,13 @@
         for(let button of buttons) {
           button.disabled = true
         }
-        let resp = await fetch(`/relay?${mode}=${relay}`)
+        let resp = await fetch('/relay', {method: 'POST', headers: { 'Content-Type': 'text/json'}, body: `${mode}=${relay}`})
         if (!resp.ok) {
           alert(`HTTP error ${resp.status}`)
         } else {
           resp = await resp.text()
           console.log(resp)
-          if (!resp.includes('Successfully set')) {
+          if (resp != 'ok') {
             alert(resp)
             return -1
           }

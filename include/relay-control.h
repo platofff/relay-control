@@ -11,6 +11,7 @@ typedef struct {
 /*
 First value is GPIO number for exporting via /sys/class/gpio/export.
 In Debian on Raspbrry Pi 3B this numbers have +458 offset.
+For Allwinner H3 based Orange Pis please read this: https://stackoverflow.com/a/46464496
 
 Second value is relay's name in web interface.
 

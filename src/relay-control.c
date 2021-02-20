@@ -109,6 +109,14 @@ char* rm_syms(const char* str, unsigned char count) {
   return result;
 }
 
+void http_plain(char* status, FCGX_Stream* stream) {
+    FCGX_FPrintF(
+    	stream,
+        "Status: %s\r\n"
+        "Content-type: text/plain\r\n\r\n",
+        status);
+}
+
 int main() {
   // Export GPIO pins
   int export_data = open("/sys/class/gpio/export", O_WRONLY);
@@ -137,9 +145,11 @@ int main() {
   if (FCGX_InitRequest(&request, socket_id, 0) != 0)
     fail("Cannot init request");
 
+  // Main FastCGI loop
   while (FCGX_Accept_r(&request) >= 0) {
     char* query_string = FCGX_GetParam("QUERY_STRING", request.envp);
-    if (!strcmp(query_string, "status=csv")) {
+    char* request_method = FCGX_GetParam("REQUEST_METHOD", request.envp);
+    if (!strcmp(query_string, "status=csv") && !strcmp(request_method, "GET")) {
       FCGX_PutS(
           "Status: 200 OK\r\n"
           "Content-type: text/csv\r\n\r\n"
@@ -150,29 +160,38 @@ int main() {
                      gpio_get_active(RELAYS[i].id),
                      RELAYS[i].name);
       continue;
-    }
-    FCGX_PutS(
-        "Status: 200 OK\r\n"
-        "Content-type: text/plain\r\n\r\n",
-        request.out);
-    if (starts_with(query_string, "off=")) {
-      char* gpio = rm_syms(query_string, 4);
-      if (gpio_set_active(gpio, 0)) {
-        FCGX_PutS("Successfully set LOW level on relay!", request.out);
-      } else {
-        FCGX_PutS("An error has occured while setting LOW level on relay!", request.out);
+    } else if (!strcmp(request_method, "POST")) {
+      // Get POST body data
+      size_t post_len = atoi(FCGX_GetParam("CONTENT_LENGTH", request.envp));
+      char* post_data = malloc(post_len);
+      FCGX_GetStr(post_data, post_len, request.in);
+      
+      if (starts_with(post_data, "off=")) {
+        char* gpio = rm_syms(post_data, 4);
+        if (gpio_set_active(gpio, 0)) {
+        	http_plain("200 OK", request.out);
+          FCGX_PutS("ok", request.out);
+        } else {
+        	http_plain("500 Internal Server Error", request.out);
+          FCGX_PutS("error", request.out);
+        }
+        free(gpio);
+        continue;
+      } else if (starts_with(post_data, "on=")) {
+        char* gpio = rm_syms(post_data, 3);
+        if (gpio_set_active(gpio, 1)) {
+        	http_plain("200 OK", request.out);
+          FCGX_PutS("ok", request.out);
+        } else {
+        	http_plain("500 Internal Server Error", request.out);
+          FCGX_PutS("error", request.out);
+        }
+        free(gpio);
+        continue;
       }
-      free(gpio);
-    } else if (starts_with(query_string, "on=")) {
-      char* gpio = rm_syms(query_string, 3);
-      if (gpio_set_active(gpio, 1)) {
-        FCGX_PutS("Successfully set HIGH level on relay!", request.out);
-      } else {
-        FCGX_PutS("An error has occured while setting HIGH level on relay!", request.out);
-      }
-      free(gpio);
-    } else {
-      FCGX_PutS("Invalid request.", request.out);
+      free(post_data);
     }
+    http_plain("501 Not Implemented", request.out);
+    FCGX_PutS("Invalid request.", request.out);
   }
 }
