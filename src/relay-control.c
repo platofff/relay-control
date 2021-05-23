@@ -53,6 +53,7 @@ bool gpio_set_active(const char* gpio, bool active) {
   // Checking existance of provided relay
   for (unsigned short i = 0; i <= RELAYS_COUNT; i++) {
     if (i == RELAYS_COUNT) {
+      fprintf(stderr, "GPIO pin %d isn't configured.\n", i);
       return 0;
     } else if (strcmp(RELAYS[i].id, gpio) == 0) {
       break;
@@ -174,7 +175,7 @@ int main() {
     } else if (!strcmp(request_method, "POST")) {
       // Get POST body data
       size_t post_len = atoi(FCGX_GetParam("CONTENT_LENGTH", request.envp));
-      char* post_data = malloc(post_len);
+      char* post_data = calloc(post_len, sizeof(char));
       FCGX_GetStr(post_data, post_len, request.in);
 
       if (starts_with(post_data, "off=")) {
