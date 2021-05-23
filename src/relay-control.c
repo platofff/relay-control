@@ -42,6 +42,13 @@ char* gpio_get_direction_file(const char* gpio) {
   return direction_file;
 }
 
+char* gpio_get_value_file(const char* gpio) {
+  char* value_file;
+  if (asprintf(&value_file, "/sys/class/gpio/gpio%s/value", gpio) == -1)
+    fail("asprintf() error");
+  return value_file;
+}
+
 bool gpio_set_active(const char* gpio, bool active) {
   // Checking existance of provided relay
   for (unsigned short i = 0; i <= RELAYS_COUNT; i++) {
@@ -64,6 +71,17 @@ bool gpio_set_active(const char* gpio, bool active) {
     return 0;
   }
   close(direction_data);
+  if (active) {
+    char* value;
+    char* value_file = gpio_get_direction_file(gpio);
+    int value_data = open(direction_file, O_WRONLY);
+    free(value_file);
+    if (value_data == -1 || write(value_data, "1", 1) != 1) {
+      fprintf(stderr, "Error writing to %s\n", value_file);
+      close(value_data);
+      return 0;
+    }
+  }
   return 1;
 }
 
