@@ -72,9 +72,8 @@ bool gpio_set_active(const char* gpio, bool active) {
   free(direction_file);
   close(direction_data);
   if (active) {
-    char* value;
-    char* value_file = gpio_get_direction_file(gpio);
-    int value_data = open(direction_file, O_WRONLY);
+    char* value_file = gpio_get_value_file(gpio);
+    int value_data = open(value_file, O_WRONLY);
     if (value_data == -1 || write(value_data, "1", 1) != 1) {
       fprintf(stderr, "Error writing to %s\n", value_file);
       close(value_data);
