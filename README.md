@@ -4,8 +4,9 @@ Simple program for switching relays via GPIO on Linux with FastCGI HTTP-based AP
 ![](screenshot.png)
 
 #### Tested boards
-- `Raspberry Pi 3 Model B` with Debian 10
-- `Orange Pi Lite` (Allwinner H3) with Armbian 21.02.2 Buster
+- `Raspberry Pi 3 Model B` running Debian 10
+- `Orange Pi Lite` (Allwinner H3) running Armbian 21.02.2 Buster
+- `Orange Pi i96` (RDA8810) running Raspbian 8 on kernel 3.10.62
 
 #### Installation
 - Install GNU C99-compliant compiler (`gcc` or `clang`) and FastCGI library with development headers (`libfcgi-dev` package in Debian)
@@ -24,6 +25,8 @@ server.modules = (
         "mod_fastcgi",
 	"mod_staticfile"
 )
+...
+include_shell "/usr/share/lighttpd/create-mime.conf.pl" # for correct MIME type for html file
 ...
 fastcgi.server = (
   "/relay" => ((
