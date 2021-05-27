@@ -187,6 +187,7 @@ int main() {
           http_plain("500 Internal Server Error", request.out);
           FCGX_PutS("error", request.out);
         }
+        free(post_data);
         free(gpio);
         continue;
       } else if (starts_with(post_data, "on=")) {
@@ -198,6 +199,7 @@ int main() {
           http_plain("500 Internal Server Error", request.out);
           FCGX_PutS("error", request.out);
         }
+        free(post_data);
         free(gpio);
         continue;
       }
