@@ -86,7 +86,7 @@ bool gpio_set_active(const char* gpio, bool active) {
 }
 
 bool gpio_get_active(const char* gpio) {
-  char* direction = (char*)calloc(sizeof(char), 4);
+  char* direction = (char*)calloc(4, sizeof(char));
   char* direction_file = gpio_get_direction_file(gpio);
   int direction_data = open(direction_file, O_RDONLY);
   if (direction_data == -1 || read(direction_data, direction, 3) != 3) {
@@ -112,7 +112,7 @@ bool starts_with(const char* a, const char* b) {
 
 // Removes symbols from beginning of the string
 char* rm_syms(const char* str, unsigned char count) {
-  char* result = (char*)calloc(sizeof(char), strlen(str) + 1);
+  char* result = (char*)calloc(strlen(str) + 1, sizeof(char));
   for (unsigned char i = 0; i < strlen(str); i++) {
     if (i < count) {
       continue;
@@ -175,7 +175,7 @@ int main() {
     } else if (!strcmp(request_method, "POST")) {
       // Get POST body data
       size_t post_len = atoi(FCGX_GetParam("CONTENT_LENGTH", request.envp));
-      char* post_data = calloc(post_len, sizeof(char));
+      char* post_data = (char*)calloc(post_len, sizeof(char));
       FCGX_GetStr(post_data, post_len, request.in);
 
       if (starts_with(post_data, "off=")) {
