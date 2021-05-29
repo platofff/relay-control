@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include <fcntl.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -21,32 +19,20 @@ void fail(const char* restrict format, ...) {
   exit(1);
 }
 
-void gpio_unexport(const int signal) {
+void gpio_unexport(__attribute__((unused)) const int signal) {
   int unexport_data = open("/sys/class/gpio/unexport", O_WRONLY);
   if (unexport_data == -1) {
     fputs("Unable to open /sys/class/gpio/unexport\n", stderr);
     return;
   }
   for (unsigned short i = 0; i < RELAYS_COUNT; i++)
-    if (write(unexport_data, RELAYS[i].id, 3) != 3)
+    if (write(unexport_data, RELAYS[i].id, 3) != 3) {
       fputs("Error writing to /sys/class/gpio/unexport\n", stderr);
+      close(unexport_data);
+    }
   close(unexport_data);
   puts("");
   exit(0);
-}
-
-char* gpio_get_direction_file(const char* gpio) {
-  char* direction_file;
-  if (asprintf(&direction_file, "/sys/class/gpio/gpio%s/direction", gpio) == -1)
-    fail("asprintf() error");
-  return direction_file;
-}
-
-char* gpio_get_value_file(const char* gpio) {
-  char* value_file;
-  if (asprintf(&value_file, "/sys/class/gpio/gpio%s/value", gpio) == -1)
-    fail("asprintf() error");
-  return value_file;
 }
 
 bool gpio_set_active(const char* gpio, bool active) {
@@ -56,52 +42,43 @@ bool gpio_set_active(const char* gpio, bool active) {
       fprintf(stderr, "GPIO pin %d isn't configured.\n", i);
       return 0;
     } else if (strcmp(RELAYS[i].id, gpio) == 0) {
+      // Setting direction "out" or "in" for this GPIO pin
+      int direction_data = open(RELAYS[i].direction_path, O_WRONLY);
+      char* direction = active ? "out" : "in";
+      if (direction_data == -1 || write(direction_data, direction, 3) != 3) {
+        fprintf(stderr, "Error writing to %s\n", RELAYS[i].direction_path);
+        close(direction_data);
+        return 0;
+      }
+      close(direction_data);
+      if (active) {
+        int value_data = open(RELAYS[i].value_path, O_WRONLY);
+        if (value_data == -1 || write(value_data, "1", 1) != 1) {
+          fprintf(stderr, "Error writing to %s\n", RELAYS[i].value_path);
+          close(value_data);
+          return 0;
+        }
+        close(value_data);
+      }
       break;
     }
-  }
-
-  // Setting direction "out" or "in" for this GPIO pin
-  char* direction;
-  char* direction_file = gpio_get_direction_file(gpio);
-  int direction_data = open(direction_file, O_WRONLY);
-  direction = active ? "out" : "in";
-  if (direction_data == -1 || write(direction_data, direction, 3) != 3) {
-    fprintf(stderr, "Error writing to %s\n", direction_file);
-    close(direction_data);
-    return 0;
-  }
-  free(direction_file);
-  close(direction_data);
-  if (active) {
-    char* value_file = gpio_get_value_file(gpio);
-    int value_data = open(value_file, O_WRONLY);
-    if (value_data == -1 || write(value_data, "1", 1) != 1) {
-      fprintf(stderr, "Error writing to %s\n", value_file);
-      close(value_data);
-      return 0;
-    }
-    free(value_file);
   }
   return 1;
 }
 
-bool gpio_get_active(const char* gpio) {
-  char* direction = (char*)calloc(4, sizeof(char));
-  char* direction_file = gpio_get_direction_file(gpio);
-  int direction_data = open(direction_file, O_RDONLY);
+bool gpio_get_active(const char* direction_path) {
+  char direction[4];
+  int direction_data = open(direction_path, O_RDONLY);
   if (direction_data == -1 || read(direction_data, direction, 3) != 3) {
-    fprintf(stderr, "Error while reading %s\n", direction_file);
+    fprintf(stderr, "Error while reading %s\n", direction_path);
     close(direction_data);
     return 0;
   }
   close(direction_data);
-  if (strcmp(direction, "out")) {
-    free(direction);
-    return 0;
-  } else {
-    free(direction);
+  if (strcmp(direction, "out") == 0)
     return 1;
-  }
+  else
+    return 0;
 }
 
 bool starts_with(const char* a, const char* b) {
@@ -112,14 +89,12 @@ bool starts_with(const char* a, const char* b) {
 
 // Removes symbols from beginning of the string
 char* rm_syms(const char* str, unsigned char count) {
-  char* result = (char*)calloc(strlen(str) + 1, sizeof(char));
-  for (unsigned char i = 0; i < strlen(str); i++) {
-    if (i < count) {
-      continue;
-    } else {
-      *(result + i - count) = str[i];
-    }
+  size_t len = strlen(str);
+  char* result = malloc(len - count + 1);
+  for (unsigned char i = count; i < len; i++) {
+    result[i - count] = str[i];
   }
+  result[len - count] = '\0';
   return result;
 }
 
@@ -137,8 +112,10 @@ int main() {
     fail("Unable to open /sys/class/gpio/export\n");
 
   for (unsigned short i = 0; i < RELAYS_COUNT; i++)
-    if (write(export_data, RELAYS[i].id, 3) != 3)
+    if (write(export_data, RELAYS[i].id, 4) != 4) {
+      close(export_data);
       fail("Error writing to /sys/class/gpio/export\n");
+    }
   close(export_data);
   // Unexport GPIO on Ctrl + C
   signal(SIGINT, gpio_unexport);
@@ -162,7 +139,7 @@ int main() {
   while (FCGX_Accept_r(&request) >= 0) {
     char* query_string = FCGX_GetParam("QUERY_STRING", request.envp);
     char* request_method = FCGX_GetParam("REQUEST_METHOD", request.envp);
-    if (!strcmp(query_string, "status=csv") && !strcmp(request_method, "GET")) {
+    if (strcmp(query_string, "status=csv") == 0 && strcmp(request_method, "GET") == 0) {
       FCGX_PutS(
           "Status: 200 OK\r\n"
           "Content-type: text/csv\r\n\r\n"
@@ -170,22 +147,23 @@ int main() {
           request.out);
       for (unsigned short i = 0; i < RELAYS_COUNT; i++)
         FCGX_FPrintF(request.out, "%s,%d,%s\n", RELAYS[i].id,
-                     gpio_get_active(RELAYS[i].id), RELAYS[i].name);
+                     gpio_get_active(RELAYS[i].direction_path), RELAYS[i].name);
       continue;
-    } else if (!strcmp(request_method, "POST")) {
+    } else if (strcmp(request_method, "POST") == 0) {
       // Get POST body data
       size_t post_len = atoi(FCGX_GetParam("CONTENT_LENGTH", request.envp));
-      char* post_data = (char*)calloc(post_len, sizeof(char));
+      char* post_data = malloc(post_len + 1);
+      post_data[post_len] = '\0';
       FCGX_GetStr(post_data, post_len, request.in);
 
       if (starts_with(post_data, "off=")) {
         char* gpio = rm_syms(post_data, 4);
         if (gpio_set_active(gpio, 0)) {
           http_plain("200 OK", request.out);
-          FCGX_PutS("ok", request.out);
+          FCGX_PutS("ok\n", request.out);
         } else {
           http_plain("500 Internal Server Error", request.out);
-          FCGX_PutS("error", request.out);
+          FCGX_PutS("error\n", request.out);
         }
         free(post_data);
         free(gpio);
@@ -194,10 +172,10 @@ int main() {
         char* gpio = rm_syms(post_data, 3);
         if (gpio_set_active(gpio, 1)) {
           http_plain("200 OK", request.out);
-          FCGX_PutS("ok", request.out);
+          FCGX_PutS("ok\n", request.out);
         } else {
           http_plain("500 Internal Server Error", request.out);
-          FCGX_PutS("error", request.out);
+          FCGX_PutS("error\n", request.out);
         }
         free(post_data);
         free(gpio);

@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -Wall -Wpedantic -std=gnu99 -O2 -lfcgi
+CFLAGS = -Wall -Wpedantic -Wextra -Werror -std=c99 -O2 -lfcgi
 TARGET = relay-control
 PREFIX = /usr/local
 WWW_PREFIX = /var/www/html

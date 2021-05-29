@@ -7,11 +7,18 @@
 typedef struct {
   const char id[4];
   const char* name;
-}Relay;
+  const char* direction_path;
+  const char* value_path;
+} Relay;
+
+#define GPIO_DIRECTION(gpio) "/sys/class/gpio/gpio" gpio "/direction"
+#define GPIO_VALUE(gpio) "/sys/class/gpio/gpio" gpio "/value"
+#define RELAY(gpio, label) {gpio, label, GPIO_DIRECTION(gpio), GPIO_VALUE(gpio)}
+
 /*
 First value is GPIO number for exporting via /sys/class/gpio/export.
-In Debian on Raspbrry Pi 3B this numbers have +458 offset.
-For Allwinner H3 based Orange Pis please read this: https://stackoverflow.com/a/46464496
+In Debian on Raspbrry Pi 3B GPIO indexes have +458 offset.
+For Orange Pi's please read this: https://linux-sunxi.org/GPIO
 
 Second value is relay's name in web interface.
 
@@ -19,10 +26,9 @@ WARNING: You must use only PULLED-DOWN GPIO pins on your board!
 */
 #define RELAYS_COUNT 5
 Relay RELAYS[RELAYS_COUNT] = {
-  { "477", "Relay A" },
-  { "478", "Relay B" },
-  { "479", "Relay C" },
-  { "480", "Relay D" },
-  { "481", "Relay E" }
+  RELAY("477", "Relay A"),
+  RELAY("478", "Relay B"),
+  RELAY("479", "Relay C"),
+  RELAY("480", "Relay D"),
+  RELAY("481", "Relay E")
 };
-
