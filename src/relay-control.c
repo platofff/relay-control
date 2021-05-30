@@ -67,7 +67,7 @@ bool gpio_set_active(const char* gpio, bool active) {
 }
 
 bool gpio_get_active(const char* direction_path) {
-  char direction[4];
+  char direction[4] = {0};
   int direction_data = open(direction_path, O_RDONLY);
   if (direction_data == -1 || read(direction_data, direction, 3) != 3) {
     fprintf(stderr, "Error while reading %s\n", direction_path);
