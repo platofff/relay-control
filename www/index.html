@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8">
@@ -31,18 +31,16 @@
     <script>
       let fetch_relays
       const switch_relay = async (relay, mode) => {
-        let buttons = document.querySelectorAll('button')
+        const buttons = document.querySelectorAll('button')
         for(let button of buttons) {
           button.disabled = true
         }
-        let resp = await fetch('/relay', {method: 'POST', headers: { 'Content-Type': 'text/json'}, body: `${mode}=${relay}`})
+        const resp = await fetch('/relay', {method: 'POST', headers: { 'Content-Type': 'text/json'}, body: `${mode}=${relay}`})
         if (!resp.ok) {
           alert(`HTTP error ${resp.status}`)
         } else {
-          resp = await resp.text()
-          console.log(resp)
-          if (resp != 'ok') {
-            alert(resp)
+          if (!resp.ok) {
+            alert(await resp.text())
             return -1
           }
           document.getElementById(`relay${relay}`).innerHTML = (() => {
@@ -53,12 +51,12 @@
             }
           })()
         }
-        for(let button of buttons) {
+        for(const button of buttons) {
           button.disabled = false
         }
       }
       (async () => {
-        let relays = document.getElementById('relays')
+        const relays = document.getElementById('relays')
         fetch_relays = async () => {
           let resp = await fetch('/relay?status=csv')
           if (resp.ok) {
@@ -84,4 +82,3 @@
     </script>
   </footer>
 </html>
-
