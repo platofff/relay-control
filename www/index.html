@@ -11,10 +11,12 @@
          width: 500px;
          max-width: 90vw;
          margin: 0 auto;
-         line-height: 2em
+         line-height: 3em
        }
        button {
-         float: right
+         float: right;
+         height: 2em;
+         margin-top: .5em
        }
        h1 {
          margin: 0 auto;
@@ -29,6 +31,7 @@
   </body>
   <footer>
     <script>
+      'use strict'
       let fetch_relays
       const switch_relay = async (relay, mode) => {
         const buttons = document.querySelectorAll('button')

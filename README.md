@@ -5,7 +5,7 @@ Simple program for switching relays via GPIO on Linux with FastCGI HTTP-based AP
 
 #### Tested boards
 - `Raspberry Pi 3 Model B` running Debian 10
-- `Orange Pi Lite` (Allwinner H3) running Armbian 21.02.2 Buster
+- `Orange Pi Lite` (Allwinner H3) running Armbian 21.02.2 Buster (`make CFLAGS="-DSET_DIRECTION"`)
 - `Orange Pi i96` (RDA8810) running Raspbian 8 on kernel 3.10.62
 
 #### Installation

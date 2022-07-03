@@ -35,6 +35,17 @@ void gpio_unexport(__attribute__((unused)) const int signal) {
   exit(0);
 }
 
+bool set_direction(const char* direction_path, const char* direction) {
+  int direction_data = open(direction_path, O_WRONLY);
+  if (direction_data == -1 || write(direction_data, direction, 3) != 3) {
+    fprintf(stderr, "Error writing to %s\n", direction_path);
+    close(direction_data);
+    return 0;
+  }
+  close(direction_data);
+  return 1;
+}
+
 bool gpio_set_active(const char* gpio, bool active) {
   // Checking existance of provided relay
   for (unsigned short i = 0; i <= RELAYS_COUNT; i++) {
@@ -42,35 +53,42 @@ bool gpio_set_active(const char* gpio, bool active) {
       fprintf(stderr, "GPIO pin %d isn't configured.\n", i);
       return 0;
     } else if (strcmp(RELAYS[i].id, gpio) == 0) {
+#ifdef SET_DIRECTION
       // Setting direction "out" or "in" for this GPIO pin
-      int direction_data = open(RELAYS[i].direction_path, O_WRONLY);
-      char* direction = active ? "out" : "in";
-      if (direction_data == -1 || write(direction_data, direction, 3) != 3) {
-        fprintf(stderr, "Error writing to %s\n", RELAYS[i].direction_path);
-        close(direction_data);
+      char direction[4] = {0};
+      if (active) {
+        strncpy(direction, "out", 4);
+      } else {
+        strncpy(direction, "in", 4);
+      }
+
+      if (!set_direction(RELAYS[i].direction_path, direction)) {
         return 0;
       }
-      close(direction_data);
       if (active) {
+#endif
         int value_data = open(RELAYS[i].value_path, O_WRONLY);
-        if (value_data == -1 || write(value_data, "1", 1) != 1) {
+        if (value_data == -1 || write(value_data, active ? "1" : "0", 1) != 1) {
           fprintf(stderr, "Error writing to %s\n", RELAYS[i].value_path);
           close(value_data);
           return 0;
         }
         close(value_data);
+#ifdef SET_DIRECTION
       }
+#endif
       break;
     }
   }
   return 1;
 }
 
-bool gpio_get_active(const char* direction_path) {
+bool gpio_get_active(const char* path) {
+#ifdef SET_DIRECTION
   char direction[4] = {0};
-  int direction_data = open(direction_path, O_RDONLY);
+  int direction_data = open(path, O_RDONLY);
   if (direction_data == -1 || read(direction_data, direction, 3) != 3) {
-    fprintf(stderr, "Error while reading %s\n", direction_path);
+    fprintf(stderr, "Error while reading %s\n", path);
     close(direction_data);
     return 0;
   }
@@ -79,6 +97,20 @@ bool gpio_get_active(const char* direction_path) {
     return 1;
   else
     return 0;
+#else
+  char value[2] = {0};
+  int value_data = open(path, O_RDONLY);
+  if (value_data == -1 || read(value_data, value, 1) != 1) {
+    fprintf(stderr, "Error while reading %s\n", path);
+    close(value_data);
+    return 0;
+  }
+  close(value_data);
+  if (strcmp(value, "1") == 0)
+    return 1;
+  else
+    return 0;
+#endif
 }
 
 bool starts_with(const char* a, const char* b) {
@@ -111,11 +143,16 @@ int main() {
   if (export_data == -1)
     fail("Unable to open /sys/class/gpio/export\n");
 
-  for (unsigned short i = 0; i < RELAYS_COUNT; i++)
+  for (unsigned short i = 0; i < RELAYS_COUNT; i++) {
     if (write(export_data, RELAYS[i].id, 4) != 4) {
       close(export_data);
       fail("Error writing to /sys/class/gpio/export\n");
     }
+#ifndef SET_DIRECTION
+    if (!set_direction(RELAYS[i].direction_path, "out"))
+      fail("Unable to set direction\n");
+#endif
+  }
   close(export_data);
   // Unexport GPIO on Ctrl + C
   signal(SIGINT, gpio_unexport);
@@ -139,7 +176,8 @@ int main() {
   while (FCGX_Accept_r(&request) >= 0) {
     char* query_string = FCGX_GetParam("QUERY_STRING", request.envp);
     char* request_method = FCGX_GetParam("REQUEST_METHOD", request.envp);
-    if (strcmp(query_string, "status=csv") == 0 && strcmp(request_method, "GET") == 0) {
+    if (strcmp(query_string, "status=csv") == 0 &&
+        strcmp(request_method, "GET") == 0) {
       FCGX_PutS(
           "Status: 200 OK\r\n"
           "Content-type: text/csv\r\n\r\n"
@@ -147,7 +185,12 @@ int main() {
           request.out);
       for (unsigned short i = 0; i < RELAYS_COUNT; i++)
         FCGX_FPrintF(request.out, "%s,%d,%s\n", RELAYS[i].id,
-                     gpio_get_active(RELAYS[i].direction_path), RELAYS[i].name);
+#ifdef SET_DIRECTION
+                     gpio_get_active(RELAYS[i].direction_path),
+#else
+                     gpio_get_active(RELAYS[i].value_path),
+#endif
+                     RELAYS[i].name);
       continue;
     } else if (strcmp(request_method, "POST") == 0) {
       // Get POST body data
