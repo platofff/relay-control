@@ -18,4 +18,4 @@ install: $(TARGET) www/index.html www/favicon.ico
     install -d $(WWW_PREFIX)
     install -m 755 relay-control $(PREFIX)/bin/relay-control
     install -m 644 www/index.html $(WWW_PREFIX)/index.html
-	install -m 644 www/favicon.ico $(WWW_PREFIX)/favicon.ico
+    install -m 644 www/favicon.ico $(WWW_PREFIX)/favicon.ico
